@@ -1,5 +1,5 @@
 {
-  "name": "tasoft/phpstorm-template",
+  "name": "ikarus/post-client",
   "license": "MIT",
   "authors": [
     {
@@ -9,11 +9,14 @@
   ],
   "autoload": {
     "psr-4": {
-      "TASoft\\" : "src"
+      "Ikarus\\SPS\\PostClient\\" : "src"
     }
   },
   "require" : {
-    "php": "^7.2"
+    "php": "^7.2",
+    "ikarus/sps": "^1",
+    "tasoft/value-storage": "^1",
+    "ext-curl": "*"
   },
   "require-dev": {
     "phpunit/phpunit": "^6"
