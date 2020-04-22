@@ -23,85 +23,36 @@
 
 namespace Ikarus\SPS\Plugin\Cyclic;
 
-
 use Ikarus\SPS\Plugin\Management\CyclicPluginManagementInterface;
 use Ikarus\SPS\Transport\TransportInterface;
-use TASoft\Util\ValueStorage;
 
-class POSTClientPlugin extends AbstractCyclesDependentPlugin
+class GETClientPlugin extends AbstractCyclesDependentPlugin
 {
 	/** @var TransportInterface */
 	private $transport;
-	/** @var ValueStorage|null */
-	private $valueStorage;
+	/** @var callable */
+	private $responseHandler;
 
 	/**
-	 * POSTClientPlugin constructor.
+	 * GETClientPlugin constructor.
 	 * @param TransportInterface $transport
-	 * @param ValueStorage|null $storage
+	 * @param callable $responseHandler
 	 * @param int $cycleInterval
 	 * @param string|null $identifier
 	 */
-	public function __construct(TransportInterface $transport, ValueStorage $storage = NULL, int $cycleInterval = 1, string $identifier = NULL)
+	public function __construct(TransportInterface $transport, callable $responseHandler, int $cycleInterval = 1, string $identifier = NULL)
 	{
 		parent::__construct($cycleInterval, $identifier);
 		$this->transport = $transport;
-		$this->valueStorage = $storage;
+		$this->responseHandler = $responseHandler;
 	}
 
-
 	/**
-	 * @inheritDoc
+	 * @return callable
 	 */
-	public function updateInterval(CyclicPluginManagementInterface $pluginManagement)
+	public function getResponseHandler(): callable
 	{
-		if($vs = $this->getValueStorage()) {
-			$POST = [];
-			foreach($vs as $key => $value) {
-				$POST[$key] = $value;
-			}
-
-			if($this->getTransport()->sendRequest($POST))
-				$this->postWasSuccessful($POST, $pluginManagement);
-			else
-				$this->postDidFail($POST, $pluginManagement);
-		}
-	}
-
-	/**
-	 * Called every time the client could post data
-	 *
-	 * @param $POST
-	 * @param CyclicPluginManagementInterface $pluginManagement
-	 */
-	protected function postWasSuccessful($POST, CyclicPluginManagementInterface $pluginManagement) {
-	}
-
-	/**
-	 * Called if the client was not able to post the data to the remote server.
-	 *
-	 * @param $POST
-	 * @param CyclicPluginManagementInterface $pluginManagement
-	 */
-	protected function postDidFail($POST, CyclicPluginManagementInterface $pluginManagement) {
-	}
-
-	/**
-	 * @return ValueStorage|null
-	 */
-	public function getValueStorage(): ValueStorage
-	{
-		return $this->valueStorage;
-	}
-
-	/**
-	 * @param ValueStorage|null $valueStorage
-	 * @return static
-	 */
-	public function setValueStorage(ValueStorage $valueStorage)
-	{
-		$this->valueStorage = $valueStorage;
-		return $this;
+		return $this->responseHandler;
 	}
 
 	/**
@@ -110,5 +61,34 @@ class POSTClientPlugin extends AbstractCyclesDependentPlugin
 	public function getTransport(): TransportInterface
 	{
 		return $this->transport;
+	}
+
+
+	/**
+	 * Called every time the client could fetch data from server
+	 *
+	 * @param $GET
+	 * @param CyclicPluginManagementInterface $pluginManagement
+	 */
+	protected function getWasSuccessful(&$GET, CyclicPluginManagementInterface $pluginManagement) {
+	}
+
+	/**
+	 * Called if the client was not able to fetch the data from the remote server.
+	 *
+	 * @param CyclicPluginManagementInterface $pluginManagement
+	 */
+	protected function getDidFail(CyclicPluginManagementInterface $pluginManagement) {
+	}
+
+
+
+	protected function updateInterval(CyclicPluginManagementInterface $pluginManagement)
+	{
+		if($data = $this->getTransport()->fetchRequest()) {
+			$this->getWasSuccessful($data, $pluginManagement);
+			call_user_func($this->getResponseHandler(), $data, $pluginManagement);
+		} else
+			$this->getDidFail($pluginManagement);
 	}
 }
