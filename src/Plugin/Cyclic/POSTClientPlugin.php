@@ -61,11 +61,21 @@ class POSTClientPlugin extends AbstractCyclesDependentPlugin
 				$POST[$key] = $value;
 			}
 
+			$this->postWillSend($POST, $pluginManagement);
 			if($this->getTransport()->sendRequest($POST))
 				$this->postWasSuccessful($POST, $pluginManagement);
 			else
 				$this->postDidFail($POST, $pluginManagement);
 		}
+	}
+
+	/**
+	 * Called right before sending the post
+	 *
+	 * @param $POST
+	 * @param CyclicPluginManagementInterface $pluginManagement
+	 */
+	protected function postWillSend(&$POST, CyclicPluginManagementInterface $pluginManagement) {
 	}
 
 	/**
